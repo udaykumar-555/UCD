@@ -20,7 +20,7 @@ const testimonials = [
   ['“Their site discipline and finishing standards changed the outcome of our commercial project.”', 'Retail development partner', 'Uday High Street'],
 ]
 
-function App() {
+function Site({ onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [dialog, setDialog] = useState(null)
   const [activeFilter, setActiveFilter] = useState('All')
@@ -60,6 +60,7 @@ function App() {
           <a href="#services" onClick={closeMenu}>Capabilities</a>
           <a href="#projects" onClick={closeMenu}>Selected work</a>
           <a href="#contact" onClick={closeMenu}>Contact</a>
+          <button className="nav-login nav-logout" onClick={onLogout}>Log out</button>
           <button className="nav-cta" onClick={() => openEnquiry()}>Start a project <span>↗</span></button>
         </div>
       </nav>
@@ -140,6 +141,75 @@ function App() {
       {dialog?.type === 'project' && <ProjectModal project={dialog.project} onClose={() => setDialog(null)} onEnquire={() => setDialog({ type: 'enquiry', project: dialog.project })} />}
     </main>
   )
+}
+
+function AuthPage({ mode }) {
+  const isRegister = mode === 'register'
+  const [showPassword, setShowPassword] = useState(false)
+  const [status, setStatus] = useState('idle')
+  const [message, setMessage] = useState('')
+
+  const submit = (event) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    if (isRegister && form.get('password') !== form.get('confirmPassword')) {
+      setStatus('error')
+      setMessage('Those passwords do not match. Please try again.')
+      return
+    }
+    window.localStorage.setItem('ucdClientAuthenticated', 'true')
+    window.location.assign('/')
+  }
+
+  return <main className="auth-page">
+    <header className="auth-header">
+      <a className="brand" href="/" aria-label="Return to UCD home">
+        <img src={ucdLogo} alt="Uday Constructions & Developers" />
+        <span><strong>Uday</strong><small>Constructions & Developers</small></span>
+      </a>
+      <a className="auth-back" href="/">← Back to website</a>
+    </header>
+    <section className="auth-shell">
+      <aside className="auth-aside">
+        <p className="kicker"><span /> UCD client portal</p>
+        <h1>{isRegister ? <>A better build<br /><em>starts here.</em></> : <>Welcome<br /><em>back.</em></>}</h1>
+        <p>{isRegister ? 'Create an account to keep your project conversations, documents, and next steps all in one thoughtful place.' : 'Sign in to stay close to your project—wherever progress takes you.'}</p>
+        <div className="auth-aside-note"><span>✦</span><p>Clarity at every stage.<br />Care in every detail.</p></div>
+      </aside>
+      <section className="auth-panel" aria-labelledby="auth-title">
+        <p className="kicker dark"><span /> {isRegister ? 'Create your account' : 'Client sign in'}</p>
+        <h2 id="auth-title">{isRegister ? 'Let’s get started.' : 'Good to see you.'}</h2>
+        <p className="auth-intro">{isRegister ? 'A few details and you’ll be ready to connect with the UCD team.' : 'Enter your details to access your client portal.'}</p>
+        <form className="auth-form" onSubmit={submit} noValidate>
+          {isRegister && <label>Full name<input required name="name" autoComplete="name" placeholder="Your full name" /></label>}
+          <label>Email address<input required type="email" name="email" autoComplete="email" placeholder="you@example.com" /></label>
+          {isRegister && <label>Phone number <span className="optional">Optional</span><input name="phone" inputMode="tel" autoComplete="tel" placeholder="+91 00000 00000" /></label>}
+          <label>Password<span className="password-field"><input required minLength="8" type={showPassword ? 'text' : 'password'} name="password" autoComplete={isRegister ? 'new-password' : 'current-password'} placeholder="At least 8 characters" /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? 'Hide' : 'Show'}</button></span></label>
+          {isRegister && <label>Confirm password<input required minLength="8" type={showPassword ? 'text' : 'password'} name="confirmPassword" autoComplete="new-password" placeholder="Repeat your password" /></label>}
+          {!isRegister && <a className="forgot-password" href="mailto:udayconstructions@gmail.com?subject=Password%20reset%20request">Forgot password?</a>}
+          <button className="button button-solid auth-submit" type="submit">{isRegister ? 'Create account' : 'Log in'} <span>→</span></button>
+          {message && <p className={`form-message ${status}`} role="status">{message}</p>}
+        </form>
+        <p className="auth-switch">{isRegister ? 'Already have an account?' : 'New to the client portal?'} <a href={isRegister ? '/login' : '/register'}>{isRegister ? 'Log in' : 'Create an account'} <span>→</span></a></p>
+        {isRegister && <p className="auth-terms">By creating an account, you agree to receive essential project updates from UCD.</p>}
+      </section>
+    </section>
+  </main>
+}
+
+function App() {
+  const authRoute = window.location.pathname.replace(/\/+$/, '')
+  const authenticated = window.localStorage.getItem('ucdClientAuthenticated') === 'true'
+  const logout = () => {
+    window.localStorage.removeItem('ucdClientAuthenticated')
+    window.location.assign('/login')
+  }
+  if (authenticated && (authRoute === '/login' || authRoute === '/register')) {
+    window.location.replace('/')
+    return null
+  }
+  if (!authenticated) return <AuthPage mode={authRoute === '/register' ? 'register' : 'login'} />
+  return <Site onLogout={logout} />
 }
 
 function EnquiryModal({ project, onClose }) {
