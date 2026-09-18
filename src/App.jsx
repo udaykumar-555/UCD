@@ -190,7 +190,7 @@ function AuthPage({ mode }) {
           <button className="button button-solid auth-submit" type="submit">{isRegister ? 'Create account' : 'Log in'} <span>→</span></button>
           {message && <p className={`form-message ${status}`} role="status">{message}</p>}
         </form>
-        <p className="auth-switch">{isRegister ? 'Already have an account?' : 'New to the client portal?'} <a href={isRegister ? '/login' : '/register'}>{isRegister ? 'Log in' : 'Create an account'} <span>→</span></a></p>
+        <p className="auth-switch">{isRegister ? 'Already have an account?' : 'New to the client portal?'} <a href={isRegister ? '/#/login' : '/#/register'}>{isRegister ? 'Log in' : 'Create an account'} <span>→</span></a></p>
         {isRegister && <p className="auth-terms">By creating an account, you agree to receive essential project updates from UCD.</p>}
       </section>
     </section>
@@ -198,14 +198,20 @@ function AuthPage({ mode }) {
 }
 
 function App() {
-  const authRoute = window.location.pathname.replace(/\/+$/, '')
+  const [currentHash, setCurrentHash] = useState(() => window.location.hash)
+  useEffect(() => {
+    const syncRoute = () => setCurrentHash(window.location.hash)
+    window.addEventListener('hashchange', syncRoute)
+    return () => window.removeEventListener('hashchange', syncRoute)
+  }, [])
+  const authRoute = (currentHash.slice(1) || window.location.pathname).replace(/\/+$/, '')
   const authenticated = window.localStorage.getItem('ucdClientAuthenticated') === 'true'
   const logout = () => {
     window.localStorage.removeItem('ucdClientAuthenticated')
-    window.location.assign('/login')
+    window.location.assign('/#/login')
   }
   if (authenticated && (authRoute === '/login' || authRoute === '/register')) {
-    window.location.replace('/')
+    window.location.replace('/#/')
     return null
   }
   if (!authenticated) return <AuthPage mode={authRoute === '/register' ? 'register' : 'login'} />
